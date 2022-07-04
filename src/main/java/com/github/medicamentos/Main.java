@@ -12,7 +12,7 @@ import javax.swing.AbstractListModel;
 import javax.swing.ListModel;
 import javax.swing.UIManager;
 import org.jfree.data.jdbc.JDBCCategoryDataset;
-
+// 
 public class Main {
 
     private Connection con;
