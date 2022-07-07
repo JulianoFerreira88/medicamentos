@@ -7,19 +7,22 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.swing.AbstractListModel;
 import org.jfree.data.jdbc.JDBCCategoryDataset;
 
 public class MainFrame extends javax.swing.JFrame {
 
     private Connection con;
-   
+    private List<String> medicamentos;
+
     public MainFrame(Connection con) {
         this.con = con;
-        setLocale(new Locale("pt_BR"));
+        medicamentos = getMedicamentos();
         initComponents();
-        
+
     }
 
     @SuppressWarnings("unchecked")
@@ -243,21 +246,15 @@ public class MainFrame extends javax.swing.JFrame {
     }
 
     private void procurarProduto(String text) {
-        String sql = "select distinct f.nmproduto as PRODUTO from ecuscastrolandafinanceiro f "
-                + "where upper(f.nmproduto) like upper('%" + text + "%')";
-        try {
-            Statement st = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-            ResultSet rs = st.executeQuery(sql);
-            rs.first();
-            List<String> produtos = new ArrayList<>();
-            while (!rs.isAfterLast()) {
-                String prod = rs.getString("PRODUTO");
-                produtos.add(prod);
-                rs.next();
+        Stream<String> filter = medicamentos.stream().filter(new Predicate<String>() {
+            @Override
+            public boolean test(String t) {
+                return t.toUpperCase().contains(text.toUpperCase());
             }
-            setModelList(produtos);
-        } catch (Exception e) {
-        }
+        });
+
+        List<String> list = filter.collect(Collectors.toList());
+        setModelList(list);
 
     }
 
@@ -274,6 +271,25 @@ public class MainFrame extends javax.swing.JFrame {
             }
         };
         jList1.setModel(model);
+    }
+
+    private List<String> getMedicamentos() {
+        String sql = "select distinct f.nmproduto as PRODUTO from ecuscastrolandafinanceiro f ";
+
+        try {
+            Statement st = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+            ResultSet rs = st.executeQuery(sql);
+            rs.first();
+            List<String> produtos = new ArrayList<>();
+            while (!rs.isAfterLast()) {
+                String prod = rs.getString("PRODUTO");
+                produtos.add(prod);
+                rs.next();
+            }
+            return produtos;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
 }
